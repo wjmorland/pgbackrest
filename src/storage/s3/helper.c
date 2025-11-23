@@ -31,7 +31,14 @@ storageS3Helper(const unsigned int repoIdx, const bool write, StoragePathExpress
     MEM_CONTEXT_TEMP_BEGIN()
     {
         // Parse the endpoint url
-        const HttpUrl *const url = httpUrlNewParseP(cfgOptionIdxStr(cfgOptRepoS3Endpoint, repoIdx), .type = httpProtocolTypeHttps);
+        const String *endpointStr = cfgOptionIdxStr(cfgOptRepoS3Endpoint, repoIdx);
+
+        // If http was specified, use it, otherwise default to https
+        const HttpProtocolType endpointProtocol =
+            strBeginsWith(endpointStr, STRDEF("http://")) ? httpProtocolTypeHttp : httpProtocolTypeHttps;
+        const HttpUrl *const url = httpUrlNewParseP(endpointStr, .type = endpointProtocol);
+        HttpProtocolType protocolType = endpointProtocol;
+
         const String *const endPoint = httpUrlHost(url);
         unsigned int port = httpUrlPort(url);
 
@@ -40,11 +47,16 @@ storageS3Helper(const unsigned int repoIdx, const bool write, StoragePathExpress
 
         if (cfgOptionIdxSource(cfgOptRepoStorageHost, repoIdx) != cfgSourceDefault)
         {
-            const HttpUrl *const url = httpUrlNewParseP(
-                cfgOptionIdxStr(cfgOptRepoStorageHost, repoIdx), .type = httpProtocolTypeHttps);
+            const String *hostStr = cfgOptionIdxStr(cfgOptRepoStorageHost, repoIdx);
 
-            host = httpUrlHost(url);
-            port = httpUrlPort(url);
+            // Same as endpoint, use http if specified but default to https
+            const HttpProtocolType hostProtocol =
+                strBeginsWith(hostStr, STRDEF("http://")) ? httpProtocolTypeHttp : httpProtocolTypeHttps;
+            const HttpUrl *const hostUrl = httpUrlNewParseP(hostStr, .type = hostProtocol);
+            protocolType = hostProtocol;
+
+            host = httpUrlHost(hostUrl);
+            port = httpUrlPort(hostUrl);
         }
 
         // If port was specified, overwrite the parsed/default port
@@ -89,7 +101,7 @@ storageS3Helper(const unsigned int repoIdx, const bool write, StoragePathExpress
                 cfgOptionIdxStrNull(cfgOptRepoS3Token, repoIdx), cfgOptionIdxStrNull(cfgOptRepoS3KmsKeyId, repoIdx),
                 cfgOptionIdxStrNull(cfgOptRepoS3SseCustomerKey, repoIdx), role, webIdTokenFile,
                 (size_t)cfgOptionIdxUInt64(cfgOptRepoStorageUploadChunkSize, repoIdx),
-                cfgOptionIdxKvNull(cfgOptRepoStorageTag, repoIdx), host, port, ioTimeoutMs(),
+                cfgOptionIdxKvNull(cfgOptRepoStorageTag, repoIdx), host, port, ioTimeoutMs(), protocolType,
                 cfgOptionIdxBool(cfgOptRepoStorageVerifyTls, repoIdx), cfgOptionIdxStrNull(cfgOptRepoStorageCaFile, repoIdx),
                 cfgOptionIdxStrNull(cfgOptRepoStorageCaPath, repoIdx), cfgOptionIdxBool(cfgOptRepoS3RequesterPays, repoIdx));
         }

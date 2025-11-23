@@ -289,7 +289,7 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: io
-        total: 6
+        total: 7
         feature: IO
         harness: pack
         harness:
@@ -298,6 +298,7 @@ unit:
             common/io/fd:
               function:
                 - fdReady
+                - fdWrite
 
         coverage:
           - common/io/bufferRead
@@ -612,7 +613,7 @@ unit:
 
       # ----------------------------------------------------------------------------------------------------------------------------
       - name: s3
-        total: 2
+        total: 3
 
         coverage:
           - storage/s3/helper
